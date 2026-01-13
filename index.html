@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freetr | Studio Hub Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050507;
+            --surface: #111116;
+            --accent: #00a2ff;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --danger: #ff4444;
+            --winter: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        input { user-select: text !important; cursor: text; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
+
+        #snow-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; }
+
+        /* NAVBAR - BLUR KALDIRILDI */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 5%; background: #050507;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .logo { font-size: 24px; font-weight: 800; color: var(--accent); min-width: 120px; }
+
+        .nav-tools { display: flex; align-items: center; gap: 15px; }
+        .online-count { font-size: 13px; color: #22c55e; display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite; }
+
+        .btn-admin {
+            background: #1a1a20; width: 45px; height: 45px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid var(--border);
+        }
+
+        .btn-add, .btn-winter {
+            color: white; border: none; padding: 12px 20px; border-radius: 12px; font-weight: 700; cursor: pointer;
+        }
+        .btn-add { background: var(--accent); }
+        .btn-winter { background: #334155; }
+        .btn-winter.active { background: var(--winter); color: #000; box-shadow: 0 0 15px white; }
+
+        .container { max-width: 1300px; margin: 0 auto; padding: 40px 20px; text-align: center; }
+
+        .search-area { max-width: 600px; margin: 0 auto 50px; }
+        .main-title { font-size: clamp(28px, 5vw, 42px); font-weight: 800; margin-bottom: 20px; }
+        
+        .search-input {
+            width: 100%; background: var(--surface); border: 1px solid var(--border);
+            padding: 16px 25px; border-radius: 16px; color: white; outline: none; text-align: center;
+            font-size: 16px; transition: 0.3s;
+        }
+        .search-input:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(0, 162, 255, 0.15); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; justify-content: center; }
+        .card { 
+            background: var(--surface); border: 1px solid var(--border); border-radius: 20px; 
+            overflow: hidden; position: relative; cursor: pointer; text-align: left;
+            transition: all 0.3s ease;
+        }
+        .card:hover { transform: translateY(-5px); border-color: var(--accent); }
+        .card-img { width: 100%; height: 180px; object-fit: cover; }
+        .card-body { padding: 20px; }
+
+        /* MODAL TASARIMLARI - BLUR TAMAMEN KALDIRILDI */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .box { 
+            background: #16161d; width: 90%; max-width: 450px; padding: 40px; 
+            border-radius: 30px; border: 1px solid var(--border); text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .drop-zone {
+            width: 100%; height: 160px; border: 2px dashed var(--border); border-radius: 15px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            position: relative; overflow: hidden; background: #0a0a0e; margin-bottom: 20px;
+        }
+        .preview-box { position: absolute; inset: 0; display: none; }
+        .preview-box img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-overlay {
+            position: absolute; inset: 0; background: rgba(255,0,0,0.4);
+            display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s;
+        }
+        .preview-box:hover .preview-overlay { opacity: 1; }
+        .img-del-btn { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+
+        .delete-overlay {
+            position: absolute; top: 12px; right: 12px; background: var(--danger); color: white;
+            border: none; padding: 8px 14px; border-radius: 10px; font-weight: 800; cursor: pointer; z-index: 10;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%; padding: 14px; background: #0a0a0e; border: 1px solid var(--border);
+            border-radius: 12px; color: white; margin-bottom: 15px; outline: none;
+        }
+
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <canvas id="snow-canvas"></canvas>
+
+    <nav>
+        <div class="logo">FREETR</div>
+        <div class="nav-tools">
+            <div id="winter-ctrl" style="display: none;"><button id="winter-toggle" class="btn-winter" onclick="toggleWinter()">❄️ Kış</button></div>
+            <div class="online-count"><div class="dot"></div> <span id="online-val">2,845</span> Online</div>
+            <div id="admin-btn" class="btn-admin" onclick="adminClick()">
+                <svg width="22" height="22" fill="#94a3b8" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.4 0 2.5 1.1 2.5 2.5S13.4 12 12 12s-2.5-1.1-2.5-2.5S10.6 7 12 7zm0 10c-2.1 0-4-1.1-5-2.7.1-1.6 3.3-2.5 5-2.5s4.9.9 5 2.5c-1 1.6-2.9 2.7-5 2.7z"/></svg>
+            </div>
+            <button id="add-btn" class="btn-add" onclick="openM('upload-modal')">İlan Ekle</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="search-area">
+            <h1 class="main-title">Studio Kaynakları</h1>
+            <input type="text" id="search-box" class="search-input" placeholder="Script, Model veya Asset ara..." oninput="handleSearch()">
+        </div>
+        <div class="grid" id="main-grid"></div>
+    </div>
+
+    <div class="modal" id="detail-modal">
+        <div class="box">
+            <h2 id="det-title" style="margin-bottom:15px"></h2>
+            <img id="det-img" style="width:100%; border-radius:18px; margin-bottom:20px; border:1px solid var(--border)">
+            <button class="btn-add" id="copy-btn" style="width:100%; background:#22c55e">Linki Kopyala</button>
+            <p onclick="closeM()" style="margin-top:20px; cursor:pointer; color:var(--text-secondary)">Kapat</p>
+        </div>
+    </div>
+
+    <div class="modal" id="upload-modal">
+        <div class="box">
+            <h2 style="margin-bottom:20px">İlan Oluştur</h2>
+            <input type="text" id="in-title" placeholder="Başlık (Örn: R6 Animasyon)">
+            <div class="drop-zone" onclick="document.getElementById('in-file').click()">
+                <span>📷 Resim Yükle</span>
+                <input type="file" id="in-file" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
+                <div class="preview-box" id="p-box">
+                    <img id="p-img">
+                    <div class="preview-overlay"><button class="img-del-btn" onclick="removeImg(event)">RESMİ SİL</button></div>
+                </div>
+            </div>
+            <input type="text" id="in-link" placeholder="Bağlantı Adresi">
+            <button class="btn-add" style="width:100%" onclick="save()">Yayınla</button>
+            <p onclick="closeM()" style="margin-top:15px; cursor:pointer; color:gray">İptal</p>
+        </div>
+    </div>
+
+    <div class="modal" id="admin-modal">
+        <div class="box">
+            <h2 style="margin-bottom:20px">Yönetici Paneli</h2>
+            <input type="text" id="adm-u" placeholder="Kullanıcı Adı">
+            <input type="password" id="adm-p" placeholder="Şifre">
+            <button class="btn-add" style="width:100%" onclick="login()">Giriş Yap</button>
+            <p onclick="closeM()" style="margin-top:15px; cursor:pointer; color:gray">Kapat</p>
+        </div>
+    </div>
+
+    <script>
+        let posts = JSON.parse(localStorage.getItem('freetr_v10')) || [];
+        let tempImg = "", isAdmin = false, winter = localStorage.getItem('winter') === 'true';
+
+        function openM(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeM() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
+
+        function handleFile(f) {
+            if(f) {
+                const r = new FileReader();
+                r.onload = (e) => { tempImg = e.target.result; document.getElementById('p-img').src = tempImg; document.getElementById('p-box').style.display='block'; };
+                r.readAsDataURL(f);
+            }
+        }
+        function removeImg(e) { e.stopPropagation(); tempImg = ""; document.getElementById('in-file').value = ""; document.getElementById('p-box').style.display='none'; }
+
+        function save() {
+            const t = document.getElementById('in-title').value, l = document.getElementById('in-link').value;
+            if(!t || !l || !tempImg) return alert("Eksikleri tamamla!");
+            posts.unshift({ id: Date.now(), t, l, i: tempImg });
+            localStorage.setItem('freetr_v10', JSON.stringify(posts));
+            location.reload();
+        }
+
+        function handleSearch() {
+            const q = document.getElementById('search-box').value.toLowerCase();
+            const filtered = posts.filter(p => {
+                const title = p.t.toLowerCase();
+                return title.includes(q) || q.split(' ').every(word => title.includes(word));
+            });
+            render(filtered);
+        }
+
+        function render(data = posts) {
+            const g = document.getElementById('main-grid');
+            g.innerHTML = data.map(p => `
+                <div class="card" onclick="showPost(${p.id})">
+                    ${isAdmin ? `<button class="delete-overlay" onclick="del(event, ${p.id})">SİL</button>` : ''}
+                    <img src="${p.i}" class="card-img">
+                    <div class="card-body">
+                        <div style="font-size:11px; color:var(--accent); font-weight:700; margin-bottom:5px">STUDIO SOURCE</div>
+                        <div style="font-weight:700">${p.t}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showPost(id) {
+            const p = posts.find(x => x.id === id);
+            document.getElementById('det-title').innerText = p.t;
+            document.getElementById('det-img').src = p.i;
+            document.getElementById('copy-btn').onclick = () => { navigator.clipboard.writeText(p.l); alert("Link kopyalandı!"); };
+            openM('detail-modal');
+        }
+
+        function del(e, id) { e.stopPropagation(); if(confirm("Silinsin mi?")) { posts = posts.filter(p => p.id !== id); localStorage.setItem('freetr_v10', JSON.stringify(posts)); render(); } }
+
+        function adminClick() { if(isAdmin) { isAdmin=false; location.reload(); } else openM('admin-modal'); }
+        function login() {
+            if(document.getElementById('adm-u').value === 'admin' && document.getElementById('adm-p').value === '1234') {
+                isAdmin = true; document.getElementById('winter-ctrl').style.display = 'block';
+                document.getElementById('add-btn').style.display = 'none'; closeM(); render();
+            } else alert("Hatalı!");
+        }
+        function toggleWinter() { winter = !winter; localStorage.setItem('winter', winter); location.reload(); }
+
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.onresize = resize; resize();
+        for(let i=0; i<100; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*3+1, d: Math.random()*1 });
+        function draw() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            if(winter) {
+                ctx.fillStyle = "white"; ctx.beginPath();
+                for(let p of particles) { ctx.moveTo(p.x, p.y); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true); }
+                ctx.fill();
+                for(let p of particles) { p.y += Math.cos(p.d) + 1 + p.r/2; p.x += Math.sin(p.d) * 2; if(p.y > canvas.height) { p.y = -10; p.x = Math.random()*canvas.width; } }
+            }
+            requestAnimationFrame(draw);
+        }
+        draw(); render();
+    </script>
+</body>
+</html>
